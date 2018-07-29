@@ -1,8 +1,17 @@
 #include <Adafruit_NeoPixel.h>
 
+#define _DEBUG
+
+#ifdef _DEBUG
+#include <SoftwareSerial.h>
+#define TRACE(S) (Serial.println((S)))
+#else
+#define TRACE(s)
+#endif
+
 /* ---------------------------------------------------------------------- LED */
-#define PIN_LED0  (  7)
-#define PIN_LED1  (  8)
+#define PIN_LED0  (  4)
+#define PIN_LED1  (  5)
 #define LED_BRGHT ( 64) // led brightness
 #define LED_COUNT (  1) // number of leds on strips
 #define LED_DIM_T (500) // duration of fade in millis
@@ -21,6 +30,10 @@ Adafruit_NeoPixel _led1 = Adafruit_NeoPixel(LED_COUNT,
 #define PIN_IRQ (3)
 
 bool _interrupted = false;
+
+/* -------------------------------------------------------------------- debug */
+#define LON  (digitalWrite(13, HIGH))
+#define LOFF (digitalWrite(13, LOW))
 
 /* ---------------------------------------------------------------------- led */
 void led() {
@@ -80,13 +93,21 @@ void led() {
       
       _led0.setPixelColor(0, cur_r, cur_g, cur_b);
       _led0.show();
+
+      _led1.setPixelColor(0, cur_r, cur_g, cur_b);
+      _led1.show();
+
       delay(LED_DELTA);
     }
 
     _led0.setPixelColor(0, nxt_r, nxt_g, nxt_b);
     _led0.show();
+
+    _led1.setPixelColor(0, nxt_r, nxt_g, nxt_b);
+    _led1.show();
     
     _interrupted = false;
+    LOFF;
   }
 }
 
@@ -96,21 +117,36 @@ void setup() {
   _led0.setBrightness(LED_BRGHT);
   _led0.show();
 
+  _led1.begin();
+  _led1.setBrightness(LED_BRGHT);
+  _led1.show();
+
   attachInterrupt( digitalPinToInterrupt(PIN_IRQ), irq, FALLING );
   pinMode(PIN_IRQ, INPUT_PULLUP);
+  pinMode(13, OUTPUT);
   
   randomSeed( analogRead(0) );
+
+  #ifdef _DEBUG
+  Serial.begin(9600);
+  #endif
+
+  TRACE("booted");
 }
 
 /* --------------------------------------------------------------------- loop */
 void loop() {
   led();
-  delay(10);
+  delay(500);
+  TRACE(digitalRead(PIN_IRQ));
 }
 
 /* ---------------------------------------------------------------------- irq */
 void irq() {
+  TRACE("irq");
   if(!_interrupted) {
+    TRACE("interrupted");
+    LON;
     _interrupted = true;
   }
 }
